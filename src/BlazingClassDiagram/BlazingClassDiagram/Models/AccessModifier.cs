@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace BlazingClassDiagram.Models
+﻿namespace BlazingClassDiagram.Models
 {
     [Flags]
     internal enum AccessModifier
@@ -13,6 +7,6 @@ namespace BlazingClassDiagram.Models
         Private = 2,
         Public = 4,
         Protected = 8,
-        Internal = 16       
+        Internal = 16
     }
 }

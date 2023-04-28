@@ -1,23 +1,15 @@
 ﻿using BlazingClassDiagram.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using System.Reflection.Metadata;
-using Parameter = BlazingClassDiagram.Models.Parameter;
 using System.Collections;
+using Parameter = BlazingClassDiagram.Models.Parameter;
 using Type = BlazingClassDiagram.Models.Type;
-using Microsoft.CodeAnalysis;
 
 namespace BlazingClassDiagram.Syntax
 {
     internal static class Parser
     {
-        internal static void Parse(this Root item, string content)            
+        internal static void Parse(this Root item, string content)
         {
             if (String.IsNullOrWhiteSpace(content))
                 return;
@@ -28,7 +20,7 @@ namespace BlazingClassDiagram.Syntax
 
             declarationSyntax?.Members
                 .OfType<BaseNamespaceDeclarationSyntax>()
-                .ToList().ForEach(n=> item.Namespaces.Parse(n));
+                .ToList().ForEach(n => item.Namespaces.Parse(n));
 
             declarationSyntax?.Members
                 .OfType<ClassDeclarationSyntax>()
@@ -51,7 +43,7 @@ namespace BlazingClassDiagram.Syntax
 
             Namespace item = new()
             {
-                Name = declarationSyntax.Name.ToString(),                
+                Name = declarationSyntax.Name.ToString(),
             };
             declarationSyntax.Members
                 .OfType<ClassDeclarationSyntax>()
@@ -134,7 +126,7 @@ namespace BlazingClassDiagram.Syntax
                 AccessModifier = declarationSyntax.Modifiers.ParseModifier(),
                 Classifiers = Classifiers.None,
             };
-            
+
             declarationSyntax.Members
                 .OfType<ConstructorDeclarationSyntax>()
                 .ToList().ForEach(m => item.Constructors.Parse(m));
@@ -180,7 +172,7 @@ namespace BlazingClassDiagram.Syntax
 
             declarationSyntax.Parameters
                 .OfType<ParameterSyntax>()
-                .ToList().ForEach(m => list.Parse(m));           
+                .ToList().ForEach(m => list.Parse(m));
         }
 
         internal static void Parse(this List<Parameter> list, ParameterSyntax? declarationSyntax)
@@ -250,7 +242,7 @@ namespace BlazingClassDiagram.Syntax
                 Name = declarationSyntax.Identifier.ValueText,
                 AccessModifier = declarationSyntax.Modifiers.ParseModifier(),
                 Classifiers = Classifiers.None,
-                ReturnType = new Models.Type { Name =  declarationSyntax.ReturnType.ToString() }
+                ReturnType = new Models.Type { Name = declarationSyntax.ReturnType.ToString() }
             };
             item.Parameters.Parse(declarationSyntax.ParameterList);
 
@@ -299,7 +291,7 @@ namespace BlazingClassDiagram.Syntax
         public static AccessModifier ParseModifier(this IEnumerable? modifier)
         {
             AccessModifier item = AccessModifier.None;
-            
+
             if (modifier is null)
                 return item;
 
@@ -308,9 +300,9 @@ namespace BlazingClassDiagram.Syntax
                 switch (m.ToString())
                 {
                     case "public": item |= AccessModifier.Public; break;
-                    case "private": item |= AccessModifier.Private;  break;
+                    case "private": item |= AccessModifier.Private; break;
                     case "internal": item |= AccessModifier.Internal; break;
-                    case "protected": item |= AccessModifier.Protected;  break;
+                    case "protected": item |= AccessModifier.Protected; break;
                 }
             }
             return item;

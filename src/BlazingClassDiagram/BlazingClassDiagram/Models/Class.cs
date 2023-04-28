@@ -1,12 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace BlazingClassDiagram.Models
+﻿namespace BlazingClassDiagram.Models
 {
-    internal class Class 
+    internal class Class
     {
         public required string Name { get; set; }
         public required AccessModifier AccessModifier { get; set; }
