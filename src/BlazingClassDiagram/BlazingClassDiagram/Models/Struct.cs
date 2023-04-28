@@ -9,10 +9,9 @@ namespace BlazingClassDiagram.Models
     internal class Struct 
     {
         public required string Name { get; set; }
-        public required string FullName { get; set; }
-        public List<Method>? Methods { get; set; }
-        public List<Property>? Properties { get; set; }
-        
+        public List<Method> Methods { get; set; } = new();
+        public List<Property> Properties { get; set; } = new();
+
     }
     
 }
