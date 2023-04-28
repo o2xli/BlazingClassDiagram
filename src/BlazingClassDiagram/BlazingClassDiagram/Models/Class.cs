@@ -14,7 +14,7 @@ namespace BlazingClassDiagram.Models
         public List<Constructor> Constructors { get; set; } = new();
 
         public List<Method> Methods { get; set; } = new();
-        public List<Property> Properties { get; set; } = new();
+        public List<Member> Members { get; set; } = new();
 
         public Namespace? Namespace { get; set; }
         public List<Type> GenericTypes { get; set; } = new();

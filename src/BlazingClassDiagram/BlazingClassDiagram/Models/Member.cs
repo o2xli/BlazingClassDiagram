@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace BlazingClassDiagram.Models
 {
-    internal class Property 
+    internal class Member 
     {
         public required string Name { get; set; }
         public required Type Type { get; set; }

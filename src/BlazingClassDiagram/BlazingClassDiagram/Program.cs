@@ -5,4 +5,4 @@ using BlazingClassDiagram.Syntax;
 
 var content = File.ReadAllText(@"C:\work\GitHub\CloudAdoptionFramework\ready\AzNamingTool\Models\PolicyDefinition\PolicyRule.cs");
 var root = new Root();
-root.ParseFile(content);
+root.Parse(content);

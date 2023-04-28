@@ -11,36 +11,40 @@ using System.Reflection.Metadata;
 using Parameter = BlazingClassDiagram.Models.Parameter;
 using System.Collections;
 using Type = BlazingClassDiagram.Models.Type;
+using Microsoft.CodeAnalysis;
 
 namespace BlazingClassDiagram.Syntax
 {
-    internal static class RootParser
+    internal static class Parser
     {
-        internal static void ParseFile(this Root root, string content)            
+        internal static void Parse(this Root item, string content)            
         {
             if (String.IsNullOrWhiteSpace(content))
                 return;
 
             var syntaxTree = CSharpSyntaxTree.ParseText(content);
 
-            var compilationUnitSyntax = syntaxTree.GetRoot() as CompilationUnitSyntax;
+            var declarationSyntax = syntaxTree.GetRoot() as CompilationUnitSyntax;
 
-            compilationUnitSyntax?.Members
-                .OfType<NamespaceDeclarationSyntax>()
-                .ToList().ForEach(n=> root.Namespaces.Parse(n));
+            declarationSyntax?.Members
+                .OfType<BaseNamespaceDeclarationSyntax>()
+                .ToList().ForEach(n=> item.Namespaces.Parse(n));
 
-            compilationUnitSyntax?.Members
-                .OfType<FileScopedNamespaceDeclarationSyntax>()
-                .ToList().ForEach(n => root.Namespaces.Parse(n));
-
-            compilationUnitSyntax?.Members
+            declarationSyntax?.Members
                 .OfType<ClassDeclarationSyntax>()
-                .ToList().ForEach(c => root.Classes.Parse(c));
+                .ToList().ForEach(c => item.Classes.Parse(c));
 
-            
+            declarationSyntax?.Members
+                .OfType<InterfaceDeclarationSyntax>()
+                .ToList().ForEach(m => item.Interfaces.Parse(m));
+
+            declarationSyntax?.Members
+                .OfType<StructDeclarationSyntax>()
+                .ToList().ForEach(m => item.Structs.Parse(m));
+
         }
 
-        internal static void Parse(this List<Namespace> list, NamespaceDeclarationSyntax declarationSyntax)
+        internal static void Parse(this List<Namespace> list, BaseNamespaceDeclarationSyntax? declarationSyntax)
         {
             if (declarationSyntax is null)
                 return;
@@ -57,26 +61,36 @@ namespace BlazingClassDiagram.Syntax
                 .OfType<InterfaceDeclarationSyntax>()
                 .ToList().ForEach(m => item.Interfaces.Parse(m));
 
+            declarationSyntax?.Members
+                .OfType<StructDeclarationSyntax>()
+                .ToList().ForEach(m => item.Structs.Parse(m));
 
             list.Add(item);
         }
 
-        internal static void Parse(this List<Namespace> list, FileScopedNamespaceDeclarationSyntax declarationSyntax)
+        internal static void Parse(this List<Struct> list, StructDeclarationSyntax declarationSyntax)
         {
             if (declarationSyntax is null)
                 return;
 
-            Namespace item = new()
+            Struct item = new()
             {
-                Name = declarationSyntax.Name.ToString(),
+                Name = declarationSyntax.Identifier.ValueText,
             };
-            declarationSyntax.Members
-                .OfType<ClassDeclarationSyntax>()
-                .ToList().ForEach(m => item.Classes.Parse(m));
 
             declarationSyntax.Members
-                .OfType<InterfaceDeclarationSyntax>()
-                .ToList().ForEach(m => item.Interfaces.Parse(m));
+                .OfType<MethodDeclarationSyntax>()
+                .ToList().ForEach(m => item.Methods.Parse(m));
+
+            declarationSyntax.Members
+               .OfType<PropertyDeclarationSyntax>()
+               .ToList().ForEach(m => item.Members.Parse(m));
+
+            declarationSyntax.Members
+              .OfType<FieldDeclarationSyntax>()
+              .ToList().ForEach(m => item.Members.Parse(m));
+
+            item.GenericTypes.Parse(declarationSyntax.TypeParameterList);
 
             list.Add(item);
         }
@@ -97,9 +111,14 @@ namespace BlazingClassDiagram.Syntax
 
             declarationSyntax.Members
                .OfType<PropertyDeclarationSyntax>()
-               .ToList().ForEach(m => item.Properties.Parse(m));
+               .ToList().ForEach(m => item.Members.Parse(m));
+
+            declarationSyntax.Members
+              .OfType<FieldDeclarationSyntax>()
+              .ToList().ForEach(m => item.Members.Parse(m));
 
             item.GenericTypes.Parse(declarationSyntax.TypeParameterList);
+            item.BaseTypes.Parse(declarationSyntax.BaseList);
 
             list.Add(item);
         }
@@ -126,14 +145,20 @@ namespace BlazingClassDiagram.Syntax
 
             declarationSyntax.Members
                .OfType<PropertyDeclarationSyntax>()
-               .ToList().ForEach(m => item.Properties.Parse(m));
+               .ToList().ForEach(m => item.Members.Parse(m));
 
+            declarationSyntax.Members
+               .OfType<FieldDeclarationSyntax>()
+               .ToList().ForEach(m => item.Members.Parse(m));
+
+
+            item.BaseTypes.Parse(declarationSyntax.BaseList);
             item.GenericTypes.Parse(declarationSyntax.TypeParameterList);
 
             list.Add(item);
         }
 
-        internal static void Parse(this List<Constructor> list, ConstructorDeclarationSyntax declarationSyntax)
+        internal static void Parse(this List<Constructor> list, ConstructorDeclarationSyntax? declarationSyntax)
         {
             if (declarationSyntax is null)
                 return;
@@ -148,7 +173,7 @@ namespace BlazingClassDiagram.Syntax
             list.Add(item);
         }
 
-        internal static void Parse(this List<Parameter> list, ParameterListSyntax declarationSyntax)
+        internal static void Parse(this List<Parameter> list, ParameterListSyntax? declarationSyntax)
         {
             if (declarationSyntax is null)
                 return;
@@ -158,7 +183,7 @@ namespace BlazingClassDiagram.Syntax
                 .ToList().ForEach(m => list.Parse(m));           
         }
 
-        internal static void Parse(this List<Parameter> list, ParameterSyntax declarationSyntax)
+        internal static void Parse(this List<Parameter> list, ParameterSyntax? declarationSyntax)
         {
             if (declarationSyntax is null)
                 return;
@@ -166,12 +191,34 @@ namespace BlazingClassDiagram.Syntax
             Parameter item = new()
             {
                 Name = declarationSyntax.Identifier.ValueText,
-                Type = declarationSyntax?.Type?.ToString()
+                Type = declarationSyntax.Type?.ToString()
             };
             list.Add(item);
         }
 
-        internal static void Parse(this List<Type> list, TypeParameterListSyntax declarationSyntax)
+        internal static void Parse(this List<Type> list, BaseListSyntax? declarationSyntax)
+        {
+            if (declarationSyntax is null)
+                return;
+
+            declarationSyntax.Types
+                .OfType<SimpleBaseTypeSyntax>()
+                .ToList().ForEach(m => list.Parse(m));
+        }
+
+        internal static void Parse(this List<Type> list, SimpleBaseTypeSyntax? declarationSyntax)
+        {
+            if (declarationSyntax is null)
+                return;
+
+            Type item = new()
+            {
+                Name = declarationSyntax.Type.ToString(),
+            };
+            list.Add(item);
+        }
+
+        internal static void Parse(this List<Type> list, TypeParameterListSyntax? declarationSyntax)
         {
             if (declarationSyntax is null)
                 return;
@@ -181,7 +228,7 @@ namespace BlazingClassDiagram.Syntax
                 .ToList().ForEach(m => list.Parse(m));
         }
 
-        internal static void Parse(this List<Type> list, TypeParameterSyntax declarationSyntax)
+        internal static void Parse(this List<Type> list, TypeParameterSyntax? declarationSyntax)
         {
             if (declarationSyntax is null)
                 return;
@@ -193,7 +240,7 @@ namespace BlazingClassDiagram.Syntax
             list.Add(item);
         }
 
-        internal static void Parse(this List<Method> list, MethodDeclarationSyntax declarationSyntax)
+        internal static void Parse(this List<Method> list, MethodDeclarationSyntax? declarationSyntax)
         {
             if (declarationSyntax is null)
                 return;
@@ -212,12 +259,12 @@ namespace BlazingClassDiagram.Syntax
             list.Add(item);
         }
 
-        internal static void Parse(this List<Property> list, PropertyDeclarationSyntax declarationSyntax)
+        internal static void Parse(this List<Member> list, PropertyDeclarationSyntax? declarationSyntax)
         {
             if (declarationSyntax is null)
                 return;
 
-            Property item = new()
+            Member item = new()
             {
                 Name = declarationSyntax.Identifier.ValueText,
                 AccessModifier = declarationSyntax.Modifiers.ParseModifier(),
@@ -228,7 +275,28 @@ namespace BlazingClassDiagram.Syntax
             list.Add(item);
         }
 
-        public static AccessModifier ParseModifier(this IEnumerable modifier)
+        internal static void Parse(this List<Member> list, FieldDeclarationSyntax? declarationSyntax)
+        {
+            if (declarationSyntax is null)
+                return;
+
+            var variable = declarationSyntax.Declaration.Variables.FirstOrDefault();
+            if (variable is null)
+                return;
+
+            Member item = new()
+            {
+                Name = variable.Identifier.ToString(),
+                AccessModifier = declarationSyntax.Modifiers.ParseModifier(),
+                Classifiers = Classifiers.None,
+                Type = new Models.Type { Name = declarationSyntax.Declaration.Type.ToString() }
+            };
+
+            list.Add(item);
+        }
+
+
+        public static AccessModifier ParseModifier(this IEnumerable? modifier)
         {
             AccessModifier item = AccessModifier.None;
             
