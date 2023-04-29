@@ -27,6 +27,10 @@ namespace BlazingClassDiagram.Syntax
                 .ToList().ForEach(c => item.Classes.Parse(c));
 
             declarationSyntax?.Members
+                .OfType<RecordDeclarationSyntax>()
+                .ToList().ForEach(c => item.Classes.Parse(c));
+
+            declarationSyntax?.Members
                 .OfType<InterfaceDeclarationSyntax>()
                 .ToList().ForEach(m => item.Interfaces.Parse(m));
 
@@ -111,6 +115,42 @@ namespace BlazingClassDiagram.Syntax
 
             item.GenericTypes.Parse(declarationSyntax.TypeParameterList);
             item.BaseTypes.Parse(declarationSyntax.BaseList);
+
+            list.Add(item);
+        }
+
+        internal static void Parse(this List<Class> list, RecordDeclarationSyntax declarationSyntax)
+        {
+            if (declarationSyntax is null)
+                return;
+
+            Class item = new()
+            {
+                Name = declarationSyntax.Identifier.ValueText,
+                AccessModifier = declarationSyntax.Modifiers.ParseModifier(),
+                Classifiers = Classifiers.None,
+                IsRecord = true
+            };
+
+            declarationSyntax.Members
+                .OfType<ConstructorDeclarationSyntax>()
+                .ToList().ForEach(m => item.Constructors.Parse(m));
+
+            declarationSyntax.Members
+                .OfType<MethodDeclarationSyntax>()
+                .ToList().ForEach(m => item.Methods.Parse(m));
+
+            declarationSyntax.Members
+               .OfType<PropertyDeclarationSyntax>()
+               .ToList().ForEach(m => item.Members.Parse(m));
+
+            declarationSyntax.Members
+               .OfType<FieldDeclarationSyntax>()
+               .ToList().ForEach(m => item.Members.Parse(m));
+
+
+            item.BaseTypes.Parse(declarationSyntax.BaseList);
+            item.GenericTypes.Parse(declarationSyntax.TypeParameterList);
 
             list.Add(item);
         }

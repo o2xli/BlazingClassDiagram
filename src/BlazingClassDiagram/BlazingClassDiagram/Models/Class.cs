@@ -15,5 +15,6 @@
 
         public List<Type> BaseTypes { get; set; } = new();
 
+        public bool IsRecord { get; set; } = false;
     }
 }
