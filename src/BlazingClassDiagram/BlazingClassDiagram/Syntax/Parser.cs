@@ -38,6 +38,12 @@ namespace BlazingClassDiagram.Syntax
                 .OfType<StructDeclarationSyntax>()
                 .ToList().ForEach(m => item.Structs.Parse(m));
 
+            item.Relationships.Parse(item);
+        }
+
+        internal static void Parse(this List<Relationship> Relationships, Root root)
+        {
+            RelationshipBuilder.BuildInheritance(Relationships, root);
         }
 
         internal static void Parse(this List<Namespace> list, BaseNamespaceDeclarationSyntax? declarationSyntax)
@@ -59,7 +65,7 @@ namespace BlazingClassDiagram.Syntax
 
             declarationSyntax?.Members
                 .OfType<StructDeclarationSyntax>()
-                .ToList().ForEach(m => item.Structs.Parse(m));
+                .ToList().ForEach(m => item.Structs.Parse(m));            
 
             list.Add(item);
         }

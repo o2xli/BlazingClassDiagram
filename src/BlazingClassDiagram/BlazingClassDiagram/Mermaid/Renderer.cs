@@ -11,12 +11,21 @@ namespace BlazingClassDiagram.Mermaid
             var sb = new StringBuilder();
             sb.AppendLine("classDiagram");
 
+            RenderRelationShips(sb, root.Relationships);
             RenderNamespaces(sb, root.Namespaces);
             RenderClasses(sb, root.Classes);
             RenderInterfaces(sb, root.Interfaces);
             RenderStructs(sb, root.Structs);
 
             return sb.ToString();
+        }
+
+        private static void RenderRelationShips(StringBuilder sb, List<Relationship> list)
+        {
+            foreach (var item in list)
+            {
+                sb.AppendLine(item.Render());
+            }
         }
 
         private static void RenderNamespaces(StringBuilder sb, List<Namespace> list)

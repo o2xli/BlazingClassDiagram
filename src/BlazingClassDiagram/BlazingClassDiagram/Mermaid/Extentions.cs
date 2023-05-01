@@ -36,6 +36,29 @@ namespace BlazingClassDiagram.Mermaid
             return sb.ToString();
         }
 
+        public static string Render(this Relationship item)
+        {
+            return $"{item.TypeA.Name} --{item.RelationType.Render()} {item.TypeB.Name}";
+        }
+
+        public static string Render(this RelationType item)
+        {
+            switch (item)
+            {
+                case RelationType.Inheritance:
+                    return "|>";
+                case RelationType.Composition:
+                    return "*";
+                case RelationType.Aggregation:
+                    return "o";
+                case RelationType.Association:
+                    return ">";
+                case RelationType.Realization:
+                    return "<|";
+            }
+            return String.Empty;
+        }
+
         public static string Render(this Struct item)
         {
             var sb = new StringBuilder();

@@ -8,3 +8,5 @@ var content = File.ReadAllText(@"C:\work\GitHub\CloudAdoptionFramework\ready\AzN
 var root = new Root();
 root.Parse(content);
 var mermaid = Renderer.Render(root);
+
+var x = true;
