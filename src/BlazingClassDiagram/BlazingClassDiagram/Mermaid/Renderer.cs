@@ -3,100 +3,103 @@ using System.Text;
 
 namespace BlazingClassDiagram.Mermaid
 {
-    internal class Renderer
+    internal static class Renderer
     {
         const string ident = "    ";
+        private static StringBuilder _sb;
+        private static Root _root;
         public static string Render(Root root)
         {
-            var sb = new StringBuilder();
-            sb.AppendLine("classDiagram");
+            _sb = new StringBuilder();
+            _sb.AppendLine("classDiagram");
+            _root = root;
 
-            RenderRelationShips(sb, root.Relationships);
-            RenderNamespaces(sb, root.Namespaces);
-            RenderClasses(sb, root.Classes);
-            RenderInterfaces(sb, root.Interfaces);
-            RenderStructs(sb, root.Structs);
+            _root.Relationships.Render();
+            _root.Namespaces.Render();
+            _root.Classes.Render();
+            _root.Interfaces.Render();
+            _root.Structs.Render();
 
-            return sb.ToString();
+            return _sb.ToString();
         }
 
-        private static void RenderRelationShips(StringBuilder sb, List<Relationship> list)
+        private static void Render(this List<Relationship> list)
         {
             foreach (var item in list)
             {
-                sb.AppendLine(item.Render());
+                _sb.AppendLine(item.Render());
             }
         }
 
-        private static void RenderNamespaces(StringBuilder sb, List<Namespace> list)
+        private static void Render(this List<Namespace> list)
         {
             foreach (var item in list)
             {
-                RenderClasses(sb, item.Classes);
-                RenderInterfaces(sb, item.Interfaces);
-                RenderStructs(sb, item.Structs);
+                item.Classes.Render();
+                item.Interfaces.Render();
+                item.Structs.Render();
             }
         }
 
-        private static void RenderInterfaces(StringBuilder sb, List<Interface> list)
+        private static void Render(this List<Interface> list)
         {
             foreach (var item in list)
             {
-                sb.AppendLine($"class {item.Render()}{{");
-                sb.AppendLine("<<Interface>>");
+                _sb.AppendLine($"class {item.Render()}{{");
+                _sb.AppendLine("<<Interface>>");
                 foreach (var member in item.Members)
                 {
-                    sb.AppendLine($"{ident}{member.Render()}");
+                    _sb.AppendLine($"{ident}{member.Render()}");
                 }
                 foreach (var method in item.Methods)
                 {
-                    sb.AppendLine($"{ident}{method.Render()}");
+                    _sb.AppendLine($"{ident}{method.Render()}");
                 }
 
-                sb.AppendLine("}");
+                _sb.AppendLine("}");
             }
         }
 
-        private static void RenderStructs(StringBuilder sb, List<Struct> list)
+        private static void Render(this List<Struct> list)
         {
             foreach (var item in list)
             {
-                sb.AppendLine($"class {item.Render()}{{");
-                sb.AppendLine("<<Struct>>");
+                _sb.AppendLine($"class {item.Render()}{{");
+                _sb.AppendLine("<<Struct>>");
                 foreach (var member in item.Members)
                 {
-                    sb.AppendLine($"{ident}{member.Render()}");
+                    _sb.AppendLine($"{ident}{member.Render()}");
                 }
                 foreach (var method in item.Methods)
                 {
-                    sb.AppendLine($"{ident}{method.Render()}");
+                    _sb.AppendLine($"{ident}{method.Render()}");
                 }
 
-                sb.AppendLine("}");
+                _sb.AppendLine("}");
             }
         }
 
-        private static void RenderClasses(StringBuilder sb, List<Class> list)
+        private static void Render(this List<Class> list)
         {
             foreach (var item in list)
             {
-                sb.AppendLine($"class {item.Render()}{{");
+                _sb.AppendLine($"class {item.Render()}{{");
                 if (item.IsRecord)
-                    sb.AppendLine("<<Record>>");
+                    _sb.AppendLine("<<Record>>");
                 foreach (var member in item.Members)
                 {
-                    sb.AppendLine($"{ident}{member.Render()}");
+                    _sb.AppendLine($"{ident}{member.Render()}");
                 }
                 foreach (var constructor in item.Constructors)
                 {
-                    sb.AppendLine($"{ident}{constructor.Render()}");
+                    _sb.AppendLine($"{ident}{constructor.Render()}");
                 }
                 foreach (var method in item.Methods)
                 {
-                    sb.AppendLine($"{ident}{method.Render()}");
+                    _sb.AppendLine($"{ident}{method.Render()}");
                 }
 
-                sb.AppendLine("}");
+                _sb.AppendLine("}");
             }
         }
     }

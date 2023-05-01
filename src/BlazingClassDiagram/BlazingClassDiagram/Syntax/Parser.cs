@@ -9,8 +9,11 @@ namespace BlazingClassDiagram.Syntax
 {
     internal static class Parser
     {
-        internal static void Parse(this Root item, string content)
+        private static Options _options;
+        internal static void Parse(this Root item, string content, Options options)
         {
+            _options = options;
+
             if (String.IsNullOrWhiteSpace(content))
                 return;
 
