@@ -4,9 +4,9 @@
     internal enum AccessModifier
     {
         None = 0,
-        Private = 2,
-        Public = 4,
-        Protected = 8,
-        Internal = 16
+        Private = 1,
+        Public = 2,
+        Protected = 4,
+        Internal = 8
     }
 }

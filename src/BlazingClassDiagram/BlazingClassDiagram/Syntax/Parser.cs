@@ -10,10 +10,42 @@ namespace BlazingClassDiagram.Syntax
     internal static class Parser
     {
         private static Options _options;
-        internal static void Parse(this Root item, string content, Options options)
+
+        internal static void Parse(this Root root, DirectoryInfo directory, Options options)
         {
             _options = options;
 
+            foreach (var file in directory.GetFiles("*.cs"))
+            {
+                root.Parse(file, options);
+            }
+            if (options.Recursive)
+            {
+                foreach (var child in directory.GetDirectories())
+                {
+                    root.Parse(child, options);
+                }
+            }
+        }
+
+        internal static void Parse(this Root root, FileInfo file, Options options)
+        {
+            _options = options;
+
+            if (!file.Extension.EndsWith(".cs", StringComparison.OrdinalIgnoreCase))
+            {
+                Console.WriteLine("File is not a csharp file!");
+                Environment.Exit(1);
+            }
+            if (_options.Verbose)
+                Console.WriteLine($"Parsing file {file.Name}");
+
+            var content = File.ReadAllText(file.FullName);
+            root.Parse(content);
+        }
+
+        private static void Parse(this Root item, string content)
+        {
             if (String.IsNullOrWhiteSpace(content))
                 return;
 
@@ -25,22 +57,33 @@ namespace BlazingClassDiagram.Syntax
                 .OfType<BaseNamespaceDeclarationSyntax>()
                 .ToList().ForEach(n => item.Namespaces.Parse(n));
 
-            declarationSyntax?.Members
-                .OfType<ClassDeclarationSyntax>()
-                .ToList().ForEach(c => item.Classes.Parse(c));
+            if (_options.IncludeTypes.HasFlag(ObjectTypes.Class))
+            {
+                declarationSyntax?.Members
+                    .OfType<ClassDeclarationSyntax>()
+                    .ToList().ForEach(c => item.Classes.Parse(c));
+            }
 
-            declarationSyntax?.Members
+            if (_options.IncludeTypes.HasFlag(ObjectTypes.Record))
+            {
+                declarationSyntax?.Members
                 .OfType<RecordDeclarationSyntax>()
                 .ToList().ForEach(c => item.Classes.Parse(c));
+            }
 
-            declarationSyntax?.Members
+            if (_options.IncludeTypes.HasFlag(ObjectTypes.Interface))
+            {
+                declarationSyntax?.Members
                 .OfType<InterfaceDeclarationSyntax>()
                 .ToList().ForEach(m => item.Interfaces.Parse(m));
+            }
 
-            declarationSyntax?.Members
+            if (_options.IncludeTypes.HasFlag(ObjectTypes.Struct))
+            {
+                declarationSyntax?.Members
                 .OfType<StructDeclarationSyntax>()
                 .ToList().ForEach(m => item.Structs.Parse(m));
-
+            }
             item.Relationships.Parse(item);
         }
 
@@ -58,17 +101,37 @@ namespace BlazingClassDiagram.Syntax
             {
                 Name = declarationSyntax.Name.ToString(),
             };
-            declarationSyntax.Members
-                .OfType<ClassDeclarationSyntax>()
-                .ToList().ForEach(m => item.Classes.Parse(m));
 
-            declarationSyntax.Members
+            if (_options.Verbose)
+                Console.WriteLine($"  Found Namespace {item.Name}");
+
+            if (_options.IncludeTypes.HasFlag(ObjectTypes.Class))
+            {
+                declarationSyntax?.Members
+                    .OfType<ClassDeclarationSyntax>()
+                    .ToList().ForEach(c => item.Classes.Parse(c));
+            }
+
+            if (_options.IncludeTypes.HasFlag(ObjectTypes.Record))
+            {
+                declarationSyntax?.Members
+                .OfType<RecordDeclarationSyntax>()
+                .ToList().ForEach(c => item.Classes.Parse(c));
+            }
+
+            if (_options.IncludeTypes.HasFlag(ObjectTypes.Interface))
+            {
+                declarationSyntax?.Members
                 .OfType<InterfaceDeclarationSyntax>()
                 .ToList().ForEach(m => item.Interfaces.Parse(m));
+            }
 
-            declarationSyntax?.Members
+            if (_options.IncludeTypes.HasFlag(ObjectTypes.Struct))
+            {
+                declarationSyntax?.Members
                 .OfType<StructDeclarationSyntax>()
-                .ToList().ForEach(m => item.Structs.Parse(m));            
+                .ToList().ForEach(m => item.Structs.Parse(m));
+            }
 
             list.Add(item);
         }
@@ -81,7 +144,11 @@ namespace BlazingClassDiagram.Syntax
             Struct item = new()
             {
                 Name = declarationSyntax.Identifier.ValueText,
+                AccessModifier = declarationSyntax.Modifiers.ParseModifier(),
             };
+
+            if (_options.Verbose)
+                Console.WriteLine($"  Found Struct {item.Name}");
 
             declarationSyntax.Members
                 .OfType<MethodDeclarationSyntax>()
@@ -108,7 +175,11 @@ namespace BlazingClassDiagram.Syntax
             Interface item = new()
             {
                 Name = declarationSyntax.Identifier.ValueText,
+                AccessModifier = declarationSyntax.Modifiers.ParseModifier(),
             };
+
+            if (_options.Verbose)
+                Console.WriteLine($"  Found Interface {item.Name}");
 
             declarationSyntax.Members
                 .OfType<MethodDeclarationSyntax>()
@@ -140,6 +211,9 @@ namespace BlazingClassDiagram.Syntax
                 Classifiers = Classifiers.None,
                 IsRecord = true
             };
+
+            if (_options.Verbose)
+                Console.WriteLine($"  Found Record {item.Name}");
 
             declarationSyntax.Members
                 .OfType<ConstructorDeclarationSyntax>()
@@ -176,6 +250,9 @@ namespace BlazingClassDiagram.Syntax
                 Classifiers = Classifiers.None,
             };
 
+            if (_options.Verbose)
+                Console.WriteLine($"  Found Class {item.Name}");
+
             declarationSyntax.Members
                 .OfType<ConstructorDeclarationSyntax>()
                 .ToList().ForEach(m => item.Constructors.Parse(m));
@@ -209,6 +286,10 @@ namespace BlazingClassDiagram.Syntax
                 Name = declarationSyntax.Identifier.ValueText,
                 AccessModifier = declarationSyntax.Modifiers.ParseModifier(),
             };
+
+            if (_options.Verbose)
+                Console.WriteLine($"    Found Constructor {item.Name}");
+
             item.Parameters.Parse(declarationSyntax.ParameterList);
 
             list.Add(item);
@@ -217,7 +298,7 @@ namespace BlazingClassDiagram.Syntax
         internal static void Parse(this List<Parameter> list, ParameterListSyntax? declarationSyntax)
         {
             if (declarationSyntax is null)
-                return;
+                return;    
 
             declarationSyntax.Parameters
                 .OfType<ParameterSyntax>()
@@ -234,6 +315,10 @@ namespace BlazingClassDiagram.Syntax
                 Name = declarationSyntax.Identifier.ValueText,
                 Type = declarationSyntax.Type?.ToString()
             };
+
+            if (_options.Verbose)
+                Console.WriteLine($"      Found Parameter {item.Name}");
+
             list.Add(item);
         }
 
@@ -293,6 +378,10 @@ namespace BlazingClassDiagram.Syntax
                 Classifiers = Classifiers.None,
                 ReturnType = new Models.Type { Name = declarationSyntax.ReturnType.ToString() }
             };
+
+            if (_options.Verbose)
+                Console.WriteLine($"    Found Method {item.Name}");
+
             item.Parameters.Parse(declarationSyntax.ParameterList);
 
             item.GenericTypes.Parse(declarationSyntax.TypeParameterList);
@@ -313,6 +402,9 @@ namespace BlazingClassDiagram.Syntax
                 Type = new Models.Type { Name = declarationSyntax.Type.ToString() }
             };
 
+            if (_options.Verbose)
+                Console.WriteLine($"    Found Property {item.Name}");
+
             list.Add(item);
         }
 
@@ -332,6 +424,9 @@ namespace BlazingClassDiagram.Syntax
                 Classifiers = Classifiers.None,
                 Type = new Models.Type { Name = declarationSyntax.Declaration.Type.ToString() }
             };
+
+            if (_options.Verbose)
+                Console.WriteLine($"    Found Field {item.Name}");
 
             list.Add(item);
         }

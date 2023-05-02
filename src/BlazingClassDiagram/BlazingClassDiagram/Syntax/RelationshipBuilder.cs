@@ -1,9 +1,4 @@
 ﻿using BlazingClassDiagram.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace BlazingClassDiagram.Syntax
 {
@@ -13,9 +8,9 @@ namespace BlazingClassDiagram.Syntax
         {
             var allClasses = root.Namespaces.SelectMany(c => c.Classes).Concat(root.Classes);
 
-            foreach(var item in allClasses)
+            foreach (var item in allClasses)
             {
-                foreach(var child in item.BaseTypes)
+                foreach (var child in item.BaseTypes)
                 {
                     var relationShip = new Relationship()
                     {

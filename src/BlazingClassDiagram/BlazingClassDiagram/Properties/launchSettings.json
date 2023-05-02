@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "BlazingClassDiagram": {
+      "commandName": "Project",
+      "commandLineArgs": "-p C:\\work\\GitHub\\CloudAdoptionFramework\\ready\\AzNamingTool\\Models -o c:\\temp\\output.mmd -i Struct"
+    }
+  }
+}

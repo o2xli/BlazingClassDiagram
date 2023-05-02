@@ -1,37 +1,47 @@
-﻿// See https://aka.ms/new-console-template for more information
-
+﻿using BlazingClassDiagram;
 using BlazingClassDiagram.Mermaid;
 using BlazingClassDiagram.Models;
 using BlazingClassDiagram.Syntax;
-using CommandLine.Text;
 using CommandLine;
-using System.ComponentModel.DataAnnotations;
 
-CommandLine.Parser.Default.ParseArguments<Options>(args)
-    .WithParsed<Options>(o =>
-    {
-        var content = File.ReadAllText(@"C:\work\GitHub\CloudAdoptionFramework\ready\AzNamingTool\Models\PolicyDefinition\PolicyRule.cs");
-        var root = new Root();
-        root.Parse(content,o);        
-        var mermaid = Renderer.Render(root);
-    });
+CommandLine.Parser.Default//.ParseArguments<Options>(args);
+//new CommandLine.Parser(settings =>
+//{
+//    settings.AutoVersion = true;
+//    settings.AutoHelp = true;
+//    settings.CaseInsensitiveEnumValues = true;
+//    settings.EnableDashDash = true;
+//})
+.ParseArguments<Options>(args)
+        .WithParsed<Options>(options =>
+        {
+            var fi = new FileInfo(options.Path);
+            var di = new DirectoryInfo(options.Path);
+
+            var root = new Root();
+            if (fi.Exists)
+                root.Parse(fi, options);
+            else if (di.Exists)
+                root.Parse(di, options);
+            else
+            {
+                Console.WriteLine("Directory or File dosn't exists!");
+                Environment.Exit(1);
+            }
+
+            var mermaid = Renderer.Render(root, options);
+            if (File.Exists(options.Output))
+            {
+                Console.WriteLine($"Overwrite {options.Output} Yes / No ?");
+                var key = Console.ReadKey();
+                if (key.KeyChar.ToString().ToLower() == "y")
+                    File.Delete(options.Output);
+                else
+                    Environment.Exit(0);
+            }
+            File.WriteAllText(options.Output, mermaid);
+            Console.WriteLine($"Output written to {options.Output}");
+        });
 
 
-public class Options
-{
-    [Option('p', "path", Required = true, HelpText = "Set input path. (can be .cs file or an directory)")]
-    public string Path { get; set; }
 
-    [Option('o', "output", Required = false,Default = "output.mmd",  HelpText = "Set output file path.")]
-    public string Output { get; set; }
-
-    [Option('i', "include", Separator=',', Required = false, Default = new string[] { "class,record,interface,struct" }, HelpText = "Set include types.")]
-    public IEnumerable<string>? IncludeTypes { get; set; }
-
-    [Option('m',"modifier", Separator = ',', Required = false, Default = new string[] { "private,public,protected,internal" }, HelpText = "Set include modifier.")]
-    public IEnumerable<string>? IncludeModifier { get; set; }
-
-    [Option("verbose", Required = false, HelpText = "Set output to verbose messages.")]
-    public bool Verbose { get; set; }
-
-}
